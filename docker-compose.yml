@@ -9,3 +9,11 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
       - 80:80
+
+  client:
+    image: client
+    container_name: client
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./client.dockerfile
