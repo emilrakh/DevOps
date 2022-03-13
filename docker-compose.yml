@@ -5,10 +5,12 @@ services:
     image: nginx:alpine
     container_name: proxy-server
     volumes:
-      - ./index.html:/usr/share/nginx/html/index.html
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
       - 80:80
+    depends_on:
+      - client
+      - api
 
   client:
     image: client
@@ -17,3 +19,43 @@ services:
     build:
       context: .
       dockerfile: ./client.dockerfile
+
+  api:
+    image: api
+    container_name: api
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: koshelekDB
+      POSTGRES_HOST: postgres
+      SEQ_SERVER_URL: http://seq:5341
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./api.dockerfile
+    depends_on:
+      - postgres
+      - seq
+
+  seq:
+    image: datalust/seq
+    container_name: seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - 5341:80
+    restart: unless-stopped
+      
+  postgres:
+    image: postgres
+    container_name: postgres
+    environment: 
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: koshelekDB
+    ports:
+      - 5432:5432
+    build:
+      context: .
+      dockerfile: ./postgres.dockerfile
+    restart: unless-stopped
