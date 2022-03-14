@@ -1,20 +1,12 @@
 version: "3.8"
 
 services:
-  proxy:
-    image: nginx:alpine
-    container_name: proxy-server
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    ports:
-      - 80:80
-    depends_on:
-      - client
-      - api
-
   client:
     image: client
     container_name: client
+    networks:
+      - devops
+      - local_network
     restart: unless-stopped
     build:
       context: .
@@ -23,12 +15,15 @@ services:
   api:
     image: api
     container_name: api
+    networks:
+      - devops
+      - local_network
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: koshelekDB
-      POSTGRES_HOST: postgres
-      SEQ_SERVER_URL: http://seq:5341
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - SEQ_SERVER_URL=${SEQ_SERVER_URL}
     restart: unless-stopped
     build:
       context: .
@@ -40,22 +35,31 @@ services:
   seq:
     image: datalust/seq
     container_name: seq
+    networks:
+      - local_network
     environment:
       - ACCEPT_EULA=Y
-    ports:
-      - 5341:80
     restart: unless-stopped
-      
+    # ports:
+    #   - 5341:80
+
   postgres:
     image: postgres
     container_name: postgres
+    networks:
+      - local_network
     environment: 
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: koshelekDB
-    ports:
-      - 5432:5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    restart: unless-stopped
+    # ports:
+    #   - 5432:5432
     build:
       context: .
       dockerfile: ./postgres.dockerfile
-    restart: unless-stopped
+
+networks:
+  devops:
+    name: tatar
+  local_network:
